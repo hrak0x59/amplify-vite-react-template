@@ -2,8 +2,25 @@ import { useEffect, useState } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import { useAuthenticator } from '@aws-amplify/ui-react';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import { styled } from '@mui/material/styles';
+import { IconButton } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const client = generateClient<Schema>();
+const Item = styled(Paper)(({ theme }) => ({
+  backgroundColor: '#fff',
+  ...theme.typography.body2,
+  padding: theme.spacing(1),
+  textAlign: 'center',
+  color: theme.palette.text.secondary,
+  ...theme.applyStyles('dark', {
+    backgroundColor: '#1A2027',
+  }),
+}));
 
 function App() {
   const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
@@ -16,7 +33,18 @@ function App() {
   }, []);
 
   function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
+    const content = window.prompt("Todo content");
+    // 入力が空でないかを確認し、空であれば何もしない
+    if (!content) {
+      alert("Please enter a valid todo content!");
+      return;
+    }
+    // 10個以上のtodoを作成できないようにする
+    if (todos.length >= 10) {
+      alert("You can only have up to 10 todos!");
+      return;
+    }
+    client.models.Todo.create({ content });
   }
 
   function deleteTodo(id: string) {
@@ -26,22 +54,21 @@ function App() {
   return (
     <main>
       <h1>{user?.signInDetails?.loginId}'s todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
-        {todos.map((todo) => (
-          <li onClick={() => deleteTodo(todo.id)} key={todo.id}>
-            {todo.content}
-          </li>
-        ))}
-      </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-          Review next step of this tutorial.
-        </a>
-      </div>
-      <button onClick={signOut}>Sign out</button>
+      <Button variant="contained" onClick={createTodo} sx={{ marginBottom: 2 }}>+ new</Button>
+      <Box sx={{ width: '100%' }}>
+      <Stack spacing={1}>
+      {todos.map((todo) => (
+            <Item key={todo.id} elevation={3} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{todo.content}</span>
+              <IconButton onClick={() => deleteTodo(todo.id)} color="error">
+                <DeleteIcon />
+              </IconButton>
+            </Item>
+          ))}
+      </Stack>
+      </Box>
+
+      <Button variant="contained" onClick={signOut} sx={{ marginTop: 2 }}>Sign out</Button>
     </main>
   );
 }
